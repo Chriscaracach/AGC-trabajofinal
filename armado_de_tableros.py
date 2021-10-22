@@ -1,21 +1,36 @@
 import random #para generar el tablero
 import csv #para escribir archivos
+import time #para hacer mas fachero el programa
 
 
 class Programa:
     def __init__(self):
-      programa = 1
+        programa = 1
     
-    def main(self):
-        print("Programa comenzó")
-
+    def main(self, obtenerDatos, generadorTablero, escritor):
+        print("Bienvenido/a al programa para crear tableros de SOPAS DE LETRAS")
+        obtenerDatos.obtener_datos_usuario()
+        obtenerDatos.obtener_datos_tablero()
+        nombreArchivo = obtenerDatos.devolveNombreArchivo()
+        nombreSolucion = nombreArchivo + "-solucion"
+        print("Generando tablero...")
+        generadorTablero.generar(obtenerDatos.devolverN(), obtenerDatos.devolverLista())
+        time.sleep(2)
+        print("Tablero generado")
+        nuevoTablero = generadorTablero.devolverTablero()
+        soluciones = generadorTablero.mostrarSolucion()
+        print("Generando archivos...")
+        escritor.escribir_tablero(nuevoTablero, nombreArchivo)
+        escritor.escribir_solucion(nombreSolucion, soluciones)
+        time.sleep(2)
+        print("Archivos generados")
+        print("Tu tablero está listo para jugar, podés jugarlo desde el programa 'sopa de letras'")
+        
 class Escritor:
     def __init__(self):
       escritor = 1
 
     def escribir_tablero(self, matriz, nombre):
-        print("Escribiendo tablero")
-
         nombre_del_archivo = nombre + ".csv"
 
         archivo = open(nombre_del_archivo, 'w')
@@ -23,35 +38,27 @@ class Escritor:
             writer = csv.writer(archivo)
             for lista in matriz:
                 writer.writerow(lista)
-            
-    
+               
+    def escribir_solucion(self, nombre, diccionario):
+        nombre_del_archivo_solucion = nombre + ".csv"
 
-    # TODAVIA NO FUNCIONA
-    # def escribir_solucion(self, nombre, diccionario):
-    #     print("Escribiendo solucion")
-
-    #     nombre_del_archivo_solucion = nombre + "_solucion.csv"
-
-    # solucion = open(nombre_del_archivo_solucion, 'w')
-    # with solucion:
-    #     titulos = ["palabra", "x_inicial", "x_final", "y_inicial", "y_final"]
-    #     writer = csv.DictWriter(solucion, titulos)
-    #     writer.writeheader()
-    #     dictValues = diccionario.values()
-    #     dictKeys = diccionario.keys()
-    #     for item in dictValues:
-    #         writer.writerow(item)
+        solucion = open(nombre_del_archivo_solucion, 'w')
+        with solucion:
+            titulos = ["x_inicial", "x_final", "y_inicial", "y_final", "palabra"]
+            writer = csv.writer(solucion)
+            writer.writerow(titulos)
+            for item in diccionario:
+                writer.writerow(item.values())
 
 class Obtener_Datos:
     def __init__(self):
         self.nombreUsuario = ""
-        self.tablero = ""
+        # self.tablero = ""
         self.N = 0
         self.lista = []
         self.nombre = ""
 
     def obtener_datos_usuario(self):
-        print("Obteniendo datos de usuario")
         while(len(self.nombreUsuario) == 0):
             nomUsuario = input("Ingresá tu nombre de usuario: ")
             if(nomUsuario.isalnum()):
@@ -59,32 +66,23 @@ class Obtener_Datos:
                 print("Nombre de usuario elegido: " + self.nombreUsuario)
             else:
                 print("El nombre de usuario no es válido, por favor ingresalo nuevamente")
-        while(len(self.tablero) == 0):
-            tab = input("Ingresá el nombre del tablero que querés jugar: ")
-            if(tab.isalnum()):
-                self.tablero = tab
-                print("Tablero elegido")
-            else:
-                print("El nombre del tablero no es válido, por favor ingresalo nuevamente")
         
-
     def obtener_datos_tablero(self):
-        print("Obteniendo datos tablero")
-        #cantidad de columnas y filas
+        print("Ahora vamos a crear el tablero")
+        #Ingresamos cantidad de columnas y filas
         numeroValido = False
         while(numeroValido == False):
-            try:
-                self.N = int(input("Ingrese un número para la cantidad de filas y columnas: "))
-            except ValueError:
-                print("La opción que ingreso no es un numero")
-            else:
+            self.N = int(input("Ingrese un número para la cantidad de filas y columnas (máx. 20): "))
+            if(self.N < 21):
                 print("El numero es válido")
                 numeroValido = True
+            else:
+                print("El numero que ingresaste no es válido.")
             
-        #lista de palabras
+        #Ingresamos lista de palabras
         self.lista = []
         palabras_posibles = int(self.N/3)
-        print("Ahora ingresá las palabras- Podés ingresar hasta " + str(palabras_posibles) + " palabras.")
+        print("Ahora ingresá las palabras. Podés ingresar hasta " + str(palabras_posibles) + " palabras.")
         print("Y recordá que la longitud de la palabra tiene que ser menor a " + str(self.N) + ".")
         print("Para finalizar la carga escribí fin")
         palabra = ""
@@ -96,7 +94,7 @@ class Obtener_Datos:
             else:
                 print("La palabra que ingresaste ya existe en la lista o contiene caracteres no válidos, ingrese de nuevo")
                 
-        #nombre del archivo
+        #Ingresamos nombre del archivo
         print("Ahora ingresá el nombre del archivo. Tiene que tener un máximo de 30 caracteres")
         nombreValido = False
         while (nombreValido == False):
@@ -107,12 +105,25 @@ class Obtener_Datos:
                 print("El nombre que ingresaste contiene caracteres no válidos. Por favor intentalo nuevamente")
         return (self.N, self.lista, self.nombre)
 
+    def devolverN(self):
+        return self.N
+
+    def devolverLista(self):
+        return self.lista
+
+    def devolverNombreUsuario(self):
+        return self.nombreUsuario
+
+    def devolveNombreArchivo(self):
+        return self.nombre
+
 class Generador_Tableros:
     def __init__(self):
         self.tableroCompleto = []
+        self.solucion = []
+        self.ubicaciones = []
 
     def generar(self, n, listaPalabras):
-        print("Generando tablero")
         contador = 0 
         tablero = [] #Tablero
         contadorRandom = "" #Sirve para el random, es un string con números
@@ -140,7 +151,8 @@ class Generador_Tableros:
             ubicacion = {
                 "x_inicial": x_inicial, # punto en x donde comienza la palabra
                 "x_final": int(x_inicial) + len(pal)-1, #punto en x donde termina
-                "y_inicialfinal" : y #en la ubicación horizontal y es solo un número
+                "y_inicial" : y,
+                "y_final" : y 
             }
             # print("ubicación generada: ") #debug
             # print(ubicacion)
@@ -148,9 +160,10 @@ class Generador_Tableros:
 
         def generarUbicacionAleatoriaVertical(y_inicial, x, pal):
             ubicacion = {
+                "x_inicial" : x,
+                "x_final": x,
                 "y_inicial": y_inicial, #idem funcion anterior
-                "y_final": int(y_inicial) + len(pal)-1,
-                "x_inicialfinal" : x
+                "y_final": int(y_inicial) + len(pal)-1
             }
             return ubicacion
 
@@ -200,6 +213,11 @@ class Generador_Tableros:
 
         #Con éste for meto palabras en tablero
         for palabra in listaPalabras: #por cada palabra
+            ####AGREGADO PARA OBTENER SOLUCION######
+            self.solucion.append(palabra)
+
+
+            ########################################
             microContadorRandom = "" #string de numeros para el random
             microContador = 0 #para el while
             ub = n-len(palabra) # ubicación posible de acuerdo al tamaño del tablero y de la palabra
@@ -214,10 +232,11 @@ class Generador_Tableros:
                     #Genero ubicación aleatoria
                     ubicacion = generarUbicacionAleatoriaHorizontal(random.choice(contadorRandom), random.choice(microContadorRandom), palabra)
                     #Inserto la palabra
-                    if(insertarPalabraHorizontal(palabra, int(ubicacion["x_inicial"]), int(ubicacion["y_inicialfinal"])) == False):
+                    if(insertarPalabraHorizontal(palabra, int(ubicacion["x_inicial"]), int(ubicacion["y_inicial"])) == False):
                         generarTableroEnBlanco() #si la funcion devuelve False, blanqueo el Tablero
                         #No se si ésto está funcionando
                     else:
+                        self.ubicaciones.append(ubicacion)
                         cargaExitosa = True
 
             else: #vertical
@@ -227,9 +246,10 @@ class Generador_Tableros:
                     #Genero ubicación aleatoria
                     ubicacion = generarUbicacionAleatoriaVertical(random.choice(microContadorRandom), random.choice(contadorRandom), palabra)
                     #inserto palabra
-                    if(insertarPalabraVertical(palabra, int(ubicacion["y_inicial"]), int(ubicacion["x_inicialfinal"])) == False):
+                    if(insertarPalabraVertical(palabra, int(ubicacion["y_inicial"]), int(ubicacion["x_inicial"])) == False):
                         generarTableroEnBlanco()
                     else:
+                        self.ubicaciones.append(ubicacion)
                         cargaExitosa = True
 
         #Con éste for, recorro todos los lugares de la matriz, si están vacíos, los lleno con letras random
@@ -244,24 +264,28 @@ class Generador_Tableros:
 
         self.tableroCompleto = tablero
         
-
-    def imprimirTablero(self):
-        for lista in self.tableroCompleto:
+    def imprimirTablero(self, tablero):
+        for lista in tablero:
             print(*lista, sep="|")
 
+    def mostrarSolucion(self):
+        datosSolucion = []
+        for item in self.ubicaciones:
+            datosSolucion.append(item)  
+        contador = 0
+        for item in datosSolucion:
+            item["palabra"] = self.solucion[contador]
+            contador +=1
+        return datosSolucion
 
+    def devolverTablero(self):
+        return self.tableroCompleto
 
+### EJECUCION ###
 
+datos = Obtener_Datos()
+escritor = Escritor()
+generador = Generador_Tableros()
+main = Programa()
 
-
-
-##PROBANDO
-dato = Obtener_Datos()
-tablero = Generador_Tableros()
-escribir = Escritor()
-
-lista = ["casa", "perro", "hola"]
-listaListas = [["a", "b", "c"],["d","e","f"],["g","h","i"]]
-nombreArchivo = "nombreArchivoPrueba"
-
-print(escribir.escribir_tablero(listaListas, nombreArchivo))
+print(main.main(datos, generador, escritor))
